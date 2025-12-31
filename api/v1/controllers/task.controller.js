@@ -15,7 +15,15 @@ module.exports.index = async (req, res) => {
 
     const countDocument = await Task.countDocuments(find);
     const objPagination = paginationHeplers(initPagination, req.query, countDocument)
+    // Logic tìm kiếm
 
+    let keyword = "";
+    if (req.query.keyword) {
+        keyword = req.query.keyword;
+        const reg = new RegExp(req.query.keyword, "i");
+        find.title = reg;
+    }
+    //End Logic tìm kiếm
     // end logic phân trang
     const sort = {
 
