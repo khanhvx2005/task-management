@@ -1,4 +1,5 @@
 const taskRoute = require("./task.route")
 module.exports = (app) => {
-    app.use('/api/v1', taskRoute)
+    const version = "/api/v1";
+    app.use(version + "/task", taskRoute)
 }
