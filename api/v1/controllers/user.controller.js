@@ -1,5 +1,8 @@
 const md5 = require('md5')
 const User = require("../models/user.model")
+const generate = require("../../../helpers/generate.heplers")
+const ForgotPassword = require("../models/forgot-password.model")
+const sendMailHelper = require("../../../helpers/sendMail.heplers")
 module.exports.register = async (req, res) => {
     const { fullname, email, password } = req.body;
     const exitsEmail = await User.findOne({
@@ -57,6 +60,100 @@ module.exports.login = async (req, res) => {
     res.cookie("token", user.token);
     res.json({
         code: 200,
-        message: "Đăng nhập thành công"
+        message: "Đăng nhập thành công",
+        token: user.token
+    })
+}
+module.exports.forgot = async (req, res) => {
+    const { email } = req.body;
+    const exitsEmail = await User.findOne({
+        email: email,
+        deleted: false
+    })
+    if (!exitsEmail) {
+        res.json({
+            code: 400,
+            message: "Email không tồn tại"
+        })
+        return;
+    }
+
+    const otp = generate.generateRandomNumber(6);
+    const objForgotPassword = {
+        email: email,
+        otp: otp,
+        expireAt: Date.now()
+    }
+    const forgotPassword = new ForgotPassword(objForgotPassword);
+    await forgotPassword.save();
+
+    // Trả otp về mail
+    const subject = "Mã OTP xác minh lấy lại mật khẩu";
+    const html = `Mã OTP để lấy lại mật khẩu là <b>${otp}</b> . Thời hạn sử dụng 3 phút`
+    sendMailHelper.sendMail(email, subject, html);
+    res.json({
+        code: 200,
+        message: "Đã trả mã otp về mail"
+
+    })
+
+}
+module.exports.otp = async (req, res) => {
+    const { email, otp } = req.body;
+    const result = await ForgotPassword.findOne({
+        email: email,
+        otp: otp
+    })
+    if (!result) {
+        res.json({
+            code: 400,
+            message: "Mã otp không đúng"
+        })
+        return;
+    }
+    const user = await User.findOne({
+        email: email
+    })
+    const token = user.token;
+    res.cookie("token", token)
+    res.json({
+        code: 200,
+        token: token
+    })
+}
+module.exports.reset = async (req, res) => {
+    const { password } = req.body;
+    const tokenUser = res.cookie.tokenUser;
+    const user = await User.findOne({
+        token: tokenUse,
+        deleted: false
+    })
+    if (user.password === md5(password)) {
+        res.json({
+            code: 200,
+            message: "Vui lòngnhập mật khẩu mới"
+        })
+        return;
+    }
+    await User.updateOne({
+        token: tokenUser
+    }, {
+        password: md5(password)
+    })
+    res.json({
+        code: 200,
+        message: "Đổi mật khẩu thành công"
+    })
+}
+module.exports.detail = async (req, res) => {
+    const token = req.cookies.token;
+    const user = await User.findOne({
+        token: token,
+        deleted: false
+    }).select("-password -token")
+    res.json({
+        code: 200,
+        message: "Thành công",
+        info: user
     })
 }
