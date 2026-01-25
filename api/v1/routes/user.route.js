@@ -8,4 +8,5 @@ router.post('/password/forgot', controller.forgot)
 router.post('/password/otp', controller.otp)
 router.post('/password/reset', controller.reset)
 router.get('/detail', authMiddleware.authRequire, controller.detail)
+router.get('/list', authMiddleware.authRequire, controller.list)
 module.exports = router;
