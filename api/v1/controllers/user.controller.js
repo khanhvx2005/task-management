@@ -3,6 +3,7 @@ const User = require("../models/user.model")
 const generate = require("../../../helpers/generate.heplers")
 const ForgotPassword = require("../models/forgot-password.model")
 const sendMailHelper = require("../../../helpers/sendMail.heplers")
+
 module.exports.register = async (req, res) => {
     const { fullname, email, password } = req.body;
     const exitsEmail = await User.findOne({
@@ -18,7 +19,8 @@ module.exports.register = async (req, res) => {
         const user = new User({
             fullname: fullname,
             email: email,
-            password: md5(password)
+            password: md5(password),
+            token: generate.generateRandomString(20)
         });
         await user.save();
         res.cookie("token", user.token);
